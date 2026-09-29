@@ -1,0 +1,182 @@
+{
+  "version": "0.0.4",
+
+  "workspace": {
+    "root": "..",
+    "detect": [".git", "package.json", "pyproject.toml", "requirements.txt", "pom.xml", "go.mod", "composer.json"],
+    "exclude": ["mcp", "$RECYCLE.BIN", "System Volume Information"],
+    "allowOther": true
+  },
+
+  "services": {
+    "jira": {
+      "label": "Jira (Atlassian Cloud)",
+      "fields": {
+        "email": { "label": "email", "required": true, "example": "name@company.com" },
+        "url":   { "label": "url",   "required": true, "example": "https://mycompany.atlassian.net", "normalize": "origin",
+                   "help": "ใส่แค่ https://<ชื่อ>.atlassian.net — วางลิงก์ board / ticket มาได้ ระบบตัดให้เหลือชื่อเว็บไซต์" },
+        "token": { "label": "token", "required": true, "secret": true,
+                   "help": "https://id.atlassian.com/manage-profile/security/api-tokens" }
+      },
+      "server": {
+        "command": "npx",
+        "args": ["-y", "@aashari/mcp-server-atlassian-jira@3.3.0"],
+        "env": {
+          "ATLASSIAN_SITE_NAME": "{{url:site}}",
+          "ATLASSIAN_USER_EMAIL": "{{email}}",
+          "ATLASSIAN_API_TOKEN": "{{token}}"
+        }
+      }
+    },
+
+    "figma": {
+      "label": "Figma",
+      "fields": {
+        "email": { "label": "email", "required": false, "example": "name@company.com" },
+        "url":   { "label": "url",   "required": true,  "default": "https://mcp.figma.com/mcp" },
+        "token": { "label": "token", "required": false, "secret": true,
+                   "help": "เว้นว่าง = ล็อกอินผ่านเบราว์เซอร์ (OAuth) · ใส่ = Personal access token จาก Figma > Settings > Security" }
+      },
+      "server": {
+        "whenNoToken": { "type": "http", "url": "{{url}}" },
+        "whenToken": {
+          "command": "npx",
+          "args": ["-y", "figma-developer-mcp@0.13.2", "--stdio"],
+          "env": { "FIGMA_API_KEY": "{{token}}" }
+        }
+      }
+    }
+  },
+
+  "permissions": {
+    "jira": {
+      "read": "อ่าน ticket / ค้นหา / คอมเมนต์",
+      "comment": "โพสต์คอมเมนต์",
+      "transition": "เปลี่ยนสถานะ ticket",
+      "create-bug": "สร้าง Bug + ลิงก์กับ ticket",
+      "create-story": "สร้าง Story",
+      "edit-story": "แก้ summary / description / AC ของ Story"
+    },
+    "figma": { "read": "อ่าน frame / component / สไตล์" },
+    "git": {
+      "pull": "fetch / pull / checkout branch ที่มีอยู่",
+      "branch": "สร้าง branch ใหม่",
+      "commit": "commit (ไม่ push)"
+    },
+    "files": {
+      "read": "อ่านโค้ดในโปรเจกต์",
+      "edit-code": "แก้ / สร้างไฟล์โค้ดของระบบ",
+      "edit-tests": "แก้ / สร้างไฟล์ test (tests/, *.test.*, *.robot)",
+      "edit-flows": "สร้าง / แก้ Test Flow — ลำดับการเดินระบบข้ามหน้าจอ / Role (tests/flows/)"
+    },
+    "run": {
+      "unit-test": "รัน unit test ของโปรเจกต์",
+      "robot-test": "รัน Robot Framework",
+      "flow-test": "รัน Test Flow ทั้งเส้น (อัตโนมัติด้วย Robot + ขั้นที่ต้องทำมือ)"
+    },
+    "logs": {
+      "write": "บันทึก Test Log ทุกครั้งที่รัน test / flow (logs/tests/)",
+      "read": "ดู Test Log ย้อนหลัง"
+    }
+  },
+
+  "roles": {
+    "Dev": {
+      "skill": "dev",
+      "description": "รับงานจาก ticket → เขียนโค้ด → test → ส่งต่อให้ Tester · เปิด Story งานเทคนิคได้",
+      "commands": ["check", "jira", "pull", "edit", "done", "story"],
+      "jira": ["read", "comment", "transition", "create-story"],
+      "figma": ["read"],
+      "git": ["pull", "branch", "commit"],
+      "files": ["read", "edit-code", "edit-tests"],
+      "run": ["unit-test", "robot-test"],
+      "logs": ["read"]
+    },
+    "Tester": {
+      "skill": "tester",
+      "description": "วางแผน test → กำหนด Test Flow การเดินระบบ → รัน test / flow → บันทึก Test Log → รายงานผล / เปิด Bug",
+      "commands": ["check", "plan", "flow", "run", "bug", "log"],
+      "jira": ["read", "comment", "transition", "create-bug"],
+      "figma": ["read"],
+      "git": ["pull"],
+      "files": ["read", "edit-tests", "edit-flows"],
+      "run": ["unit-test", "robot-test", "flow-test"],
+      "logs": ["write", "read"]
+    },
+    "UX-UI": {
+      "skill": "ux-ui",
+      "description": "ส่งต่อสเปกดีไซน์จาก Figma ให้ Dev → ตรวจงานจริงเทียบกับดีไซน์ · เปิด Story ด้าน UX/UI ได้",
+      "commands": ["check", "spec", "review", "story"],
+      "jira": ["read", "comment", "create-bug", "create-story"],
+      "figma": ["read"],
+      "git": ["pull"],
+      "files": ["read"],
+      "run": [],
+      "logs": ["read"]
+    },
+    "BA": {
+      "skill": "ba",
+      "description": "เขียน user story + acceptance criteria → ดูแล backlog ให้พร้อมทำ · เปลี่ยนสถานะ ticket ได้",
+      "commands": ["check", "story", "review", "move"],
+      "jira": ["read", "comment", "create-story", "edit-story", "transition"],
+      "figma": ["read"],
+      "git": [],
+      "files": [],
+      "run": [],
+      "logs": ["read"]
+    }
+  },
+
+  "tests": {
+    "flowsDir": "tests/flows",
+    "robotFlowsDir": "tests/robot/flows",
+    "logsDir": "logs/tests",
+    "logFormat": "logs/tests/<project>/<YYYY-MM-DD_HHmm>_<KEY หรือ flow-ชื่อ>.md"
+  },
+
+  "jira": {
+    "statuses": {
+      "new": "To Do",
+      "doing": "In Progress",
+      "testing": "Testing",
+      "done": "Done"
+    }
+  },
+
+  "project": {
+    "baseBranch": "auto",
+    "unitTest": "auto",
+    "robotTest": "python -m robot --outputdir results/robot tests/robot"
+  },
+
+  "ui": {
+    "port": 80,
+    "fallbackPort": 4610,
+    "idleMinutes": 60
+  },
+
+  "profiles": {
+    "dir": "profiles"
+  },
+
+  "agents": {
+    "claude": { "type": "claude", "label": "Claude Code (Anthropic)", "command": "claude", "vscodeUri": "vscode://anthropic.claude-code/open?session={agentSession}" },
+    "codex":  { "type": "codex",  "label": "Codex (OpenAI / GPT)",    "command": "codex", "windowsSandbox": "unelevated", "vscodeUri": "vscode://openai.chatgpt/local/{agentSession}" },
+    "gemini": { "type": "gemini", "label": "Gemini (Google)",         "command": "gemini" },
+    "opencode": { "type": "opencode", "label": "OpenCode",            "command": "opencode", "readAgent": "plan" },
+    "ollama": { "type": "text",   "label": "Ollama (llama3.1)",       "command": "ollama", "args": ["run", "llama3.1", "{prompt}"] }
+  },
+
+  "chat": {
+    "dir": "chats",
+    "defaultMode": "read",
+    "vscodeDelayMs": 8000
+  },
+
+  "output": {
+    "file": ".env",
+    "example": ".env.example",
+    "keyFormat": "<PROJECT>_<SERVICE>_<FIELD>",
+    "projectKey": "folder name, upper case, non A-Z0-9 -> _ (vantive-api -> VANTIVE_API)"
+  }
+}

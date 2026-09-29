@@ -1,0 +1,28 @@
+{
+  "name": "team",
+  "displayName": "Team MCP",
+  "description": "Role-based Jira + Figma workflows (Dev / Tester / UX-UI / BA) for projects set up with run mcp",
+  "version": "0.0.4",
+  "author": { "name": "Pongsakon", "email": "naris@riverpark.co.th" },
+  "userConfig": {
+    "mcp_home": {
+      "type": "directory",
+      "title": "MCP folder",
+      "description": "Folder that contains README.md, mcp.json and .env from run mcp",
+      "default": "D:\\mcp",
+      "required": true
+    },
+    "role": {
+      "type": "string",
+      "title": "Fallback role",
+      "description": "Dev, Tester, UX-UI or BA. Used only when the current project has no role in .env (run mcp)",
+      "required": false
+    },
+    "jira_project": {
+      "type": "string",
+      "title": "Default Jira project key (optional)",
+      "description": "e.g. KAN. Used by check / ba-review when the ticket key is not given",
+      "required": false
+    }
+  }
+}

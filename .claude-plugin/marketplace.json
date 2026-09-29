@@ -1,0 +1,13 @@
+{
+  "name": "team-mcp",
+  "owner": { "name": "Pongsakon", "email": "naris@riverpark.co.th" },
+  "description": "Team plugins for Jira + Figma workflows",
+  "plugins": [
+    {
+      "name": "team",
+      "source": "./",
+      "description": "Role-based Jira + Figma workflows (Dev / Tester / UX-UI / BA)",
+      "version": "0.0.4"
+    }
+  ]
+}

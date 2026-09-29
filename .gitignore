@@ -1,0 +1,8 @@
+# ค่าของแต่ละเครื่อง (มี token) — ห้ามแชร์
+.env
+.env.*
+!.env.example
+profiles/
+chats/
+# Test Log ของแต่ละเครื่อง
+logs/

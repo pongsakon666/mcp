@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Control Panel</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #667085; --line: #e3e6eb;
+    --accent: #2f6fed; --accent-soft: #e8f0fe; --ok: #1a7f4b; --ok-soft: #e6f4ec;
+    --err: #c0362c; --err-soft: #fdecea; --warn: #9a6700; --warn-soft: #fff4d6; --radius: 12px;
+    --font: "Noto Sans Thai", "Leelawadee UI", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --card: #1b1f27; --text: #e7e9ee; --muted: #9aa3b2; --line: #2c323d;
+      --accent: #6c9bff; --accent-soft: #1f2a44; --ok: #4cc38a; --ok-soft: #173326;
+      --err: #ff7b72; --err-soft: #3a1d1b; --warn: #e3b341; --warn-soft: #3a2f12;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 var(--font); }
+  header { background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  header .in { max-width: 920px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand { font-weight: 700; }
+  .brand span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+  nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+  nav a { color: var(--muted); text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 14px; }
+  nav a:hover { color: var(--text); background: var(--bg); }
+  nav a.on { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 120px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  section.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-bottom: 18px; }
+  .step { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 17px; font-weight: 600; }
+  .num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; }
+  .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  label.check { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
+  label.check:hover { border-color: var(--accent); }
+  label.check.on { border-color: var(--accent); background: var(--accent-soft); }
+  label.check input { margin-top: 4px; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+  .pname { font-weight: 600; }
+  .ppath { color: var(--muted); font-size: 12px; word-break: break-all; }
+  .badge { display: inline-block; font-size: 11px; padding: 0 8px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); margin-left: 6px; font-weight: 600; vertical-align: 1px; }
+  .badge.blue { background: var(--accent-soft); color: var(--accent); }
+  .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  input[type=text], input[type=email], input[type=url], input[type=password] {
+    flex: 1; min-width: 0; width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--text); font: inherit;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  button { font: inherit; border-radius: 8px; padding: 8px 14px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; white-space: nowrap; }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; padding: 10px 22px; }
+  button.danger { color: var(--err); }
+  button.danger:hover { border-color: var(--err); }
+  button.link { border: none; background: none; color: var(--accent); padding: 4px 0; }
+  .proj { border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-top: 14px; }
+  .proj-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .proj-title { font-weight: 600; }
+  .proj-title span { color: var(--muted); font-weight: 400; }
+  .label { font-size: 13px; color: var(--muted); margin: 14px 0 6px; font-weight: 600; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chips label.check { padding: 7px 12px; align-items: center; }
+  .chips label.check input { margin-top: 0; }
+  .svc { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; margin-top: 14px; }
+  .svc h4 { margin: 0 0 8px; font-size: 14px; }
+  .field { display: grid; grid-template-columns: 70px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .field .fl { font-size: 13px; color: var(--muted); }
+  .field .fl b { color: var(--err); }
+  .fhelp { grid-column: 2; font-size: 12px; color: var(--muted); margin-top: -4px; }
+  .fhelp a { color: var(--accent); }
+  .pw { display: flex; gap: 6px; }
+  .status { font-size: 13px; }
+  .status.ok { color: var(--ok); } .status.err { color: var(--err); }
+  .msg { padding: 12px 14px; border-radius: 10px; margin-top: 14px; font-size: 14px; }
+  .msg.err { background: var(--err-soft); color: var(--err); }
+  .msg.ok { background: var(--ok-soft); color: var(--ok); }
+  .msg.warn { background: var(--warn-soft); color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); padding: 12px 16px; }
+  .bar .in { max-width: 920px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .empty { color: var(--muted); font-size: 14px; }
+  .pcard { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-top: 10px; }
+  .pcard.on { border-color: var(--accent); background: var(--accent-soft); }
+  .pcard-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .pcard-name { font-weight: 700; font-size: 16px; }
+  .pcard ul { margin: 8px 0 0; padding-left: 18px; font-size: 14px; }
+  .pcard li span { color: var(--muted); }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  label.pick { display: block; cursor: pointer; }
+  label.pick input { accent-color: var(--accent); margin-right: 8px; }
+  .stat { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .stat div { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .stat b { display: block; font-size: 20px; }
+  .stat span { color: var(--muted); font-size: 13px; }
+  .chat-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .chat-meta { font-size: 13px; color: var(--muted); }
+  .chat-meta b { color: var(--text); }
+  .sid { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+  .msgs { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; min-height: 240px; }
+  .bubble { max-width: 88%; padding: 10px 14px; border-radius: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+  .bubble.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; white-space: pre-wrap; }
+  .bubble.ai { align-self: flex-start; background: var(--bg); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .bubble.ai p { margin: 0 0 8px; } .bubble.ai p:last-child { margin: 0; }
+  .bubble.ai pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; font-size: 13px; }
+  .bubble.ai code { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: var(--card); border-radius: 4px; padding: 0 4px; }
+  .bubble.ai pre code { background: none; padding: 0; }
+  .bubble.ai ul, .bubble.ai ol { margin: 4px 0 8px; padding-left: 20px; }
+  .bubble.sys { align-self: center; background: none; color: var(--muted); font-size: 13px; padding: 2px; }
+  .tool { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 1px 10px; margin: 2px 4px 6px 0; }
+  .tool.ok { color: var(--ok); } .tool.err { color: var(--err); }
+  .cursor::after { content: '▍'; animation: blink 1s steps(1) infinite; color: var(--accent); }
+  @keyframes blink { 50% { opacity: 0; } }
+  .composer { flex: 1; display: flex; gap: 8px; align-items: flex-end; }
+  .composer textarea { flex: 1; min-height: 44px; max-height: 180px; resize: none; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; }
+  .composer textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); min-width: 0; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 600; }  [hidden] { display: none !important; }
+  @media (max-width: 560px) { .field { grid-template-columns: 1fr; } .fhelp { grid-column: 1; } }
+</style>
+</head>
+<body>
+<header><div class="in">
+  <div class="brand">MCP <span id="ver"></span></div>
+  <nav>
+    <a href="#/">หน้าหลัก</a>
+    <a href="#/setup">ตั้งค่า</a>
+    <a href="#/profiles">โปรไฟล์</a>
+    <a href="#/switch">สลับโปรไฟล์</a>
+    <a href="#/git">Git</a>
+    <a href="#/chat">แชท</a>
+  </nav>
+  <button id="shutdown" class="danger" title="ปิดเซิร์ฟเวอร์ localhost">ปิดระบบ</button>
+</div></header>
+
+<div class="wrap" id="view"><p class="empty">กำลังโหลด…</p></div>
+<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const api = (p, body) => fetch(p, {
+  method: body ? 'POST' : 'GET',
+  headers: { 'Content-Type': 'application/json' },
+  body: body ? JSON.stringify(body) : undefined,
+}).then(async (r) => ({ status: r.status, ...(await r.json().catch(() => ({}))) }));
+const errBox = (r) => `<div class="msg err"><b>ยังทำไม่ได้</b><br>${(r.errors || [r.error || 'เกิดข้อผิดพลาด']).map(esc).join('<br>')}</div>`;
+const fmtDate = (s) => new Date(s).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+
+let S = null; // server state
+async function loadState() {
+  S = await api('/api/state');
+  $('#ver').textContent = 'v' + S.version;
+}
+
+function setBar(html) {
+  $('#bar').hidden = !html;
+  $('#barIn').innerHTML = html || '';
+}
+
+function resultTable(r) {
+  const rows = (r.results || []).map((p) => `<tr><td>${esc(p.path)}</td><td>${esc(p.role)}</td><td>${
+    p.mcp?.length ? p.mcp.map((m) => `<span class="status ${m.ok ? 'ok' : 'err'}">${m.ok ? '✔' : '✘'} ${esc(m.service)}${m.ok ? '' : ' — ' + esc(m.message)}</span>`).join('<br>')
+      : esc(p.services.join(', ')) + (r.registered === false ? ' (ยังไม่ลงทะเบียน — ไม่พบ Claude Code)' : '')
+  }</td></tr>`).join('');
+  const removed = r.removed?.length ? `<p class="hint">ถอด MCP ออกจาก: ${r.removed.map(esc).join(', ')}</p>` : '';
+  return rows ? `<table style="margin-top:10px"><tr><th>โปรเจกต์</th><th>Role</th><th>MCP</th></tr>${rows}</table>${removed}` : '';
+}
+
+function projectList(ps) {
+  return ps.length ? `<ul>${ps.map((p) => `<li>${esc(p.name)} <span>· ${esc(p.role || '-')} · ${esc(p.services.join(', ') || '-')}</span></li>`).join('')}</ul>`
+    : '<p class="empty">ไม่มีโปรเจกต์</p>';
+}
+
+// ============ Editor (projects → services → role → fields) ============
+
+function Editor(root, { initial = [], source, onChange }) {
+  const projects = new Map(S.projects.map((p) => [p.path, { ...p }]));
+  const selected = [];
+  const state = {};
+  const initialPaths = new Set(initial.map((p) => p.path));
+
+  function initState(path, saved) {
+    if (state[path]) return;
+    state[path] = { services: new Set(saved?.services || []), role: saved?.role || '', fields: {}, hasToken: {}, test: {} };
+    for (const sid of Object.keys(S.services)) {
+      const f = { ...(saved?.fields?.[sid] || {}) };
+      state[path].hasToken[sid] = !!f.hasToken;
+      delete f.hasToken;
+      state[path].fields[sid] = f;
+    }
+  }
+  for (const p of initial) {
+    if (!projects.has(p.path)) projects.set(p.path, { path: p.path, name: p.name, key: p.key });
+    selected.push(p.path);
+    initState(p.path, p);
+  }
+
+  const defaults = (sid) => Object.fromEntries(Object.entries(S.services[sid].fields).filter(([, d]) => d.default).map(([f, d]) => [f, d.default]));
+  const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => String(v).trim() !== ''));
+
+  function fieldHtml(path, sid, f, def) {
+    const v = state[path].fields[sid][f] ?? '';
+    const id = 'f' + Math.random().toString(36).slice(2);
+    const type = def.secret ? 'password' : f === 'email' ? 'email' : f === 'url' ? 'url' : 'text';
+    const kept = def.secret && (state[path].hasToken[sid] || state[path].copyHasToken?.[sid]);
+    const ph = kept ? '•••••• (บันทึกไว้แล้ว — เว้นว่างเพื่อใช้ค่าเดิม)' : def.default || def.example || '';
+    const help = def.help ? esc(def.help).replace(/(https:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>') : '';
+    const input = `<input id="${id}" type="${type}" value="${esc(v)}" placeholder="${esc(ph)}" data-path="${esc(path)}" data-sid="${sid}" data-f="${f}" autocomplete="off">`;
+    return `<div class="field">
+      <label class="fl" for="${id}">${esc(def.label || f)}${def.required ? ' <b>*</b>' : ''}</label>
+      ${def.secret ? `<div class="pw">${input}<button type="button" data-toggle="${id}">แสดง</button></div>` : input}
+      ${help ? `<div class="fhelp">${help}</div>` : ''}
+    </div>`;
+  }
+
+  function render() {
+    const projHtml = [...projects.values()].map((p) => `
+      <label class="check ${selected.includes(p.path) ? 'on' : ''}">
+        <input type="checkbox" data-pick="${esc(p.path)}" ${selected.includes(p.path) ? 'checked' : ''}>
+        <span><span class="pname">${esc(p.name)}</span>${initialPaths.has(p.path) ? '<span class="badge">ตั้งค่าแล้ว</span>' : ''}
+        <div class="ppath">${esc(p.path)}</div></span>
+      </label>`).join('') || '<p class="empty">ไม่พบโปรเจกต์ — เพิ่มเองด้านล่าง</p>';
+
+    const cfgHtml = !selected.length ? '<p class="empty">เลือกโปรเจกต์ในข้อ 1 ก่อน</p>' : selected.map((path, i) => {
+      const st = state[path];
+      const svc = Object.keys(S.services).map((sid) => `
+        <label class="check ${st.services.has(sid) ? 'on' : ''}"><input type="checkbox" data-svc="${sid}" data-path="${esc(path)}" ${st.services.has(sid) ? 'checked' : ''}> ${esc(sid)}</label>`).join('');
+      const roles = S.roles.map((r) => `
+        <label class="check ${st.role === r ? 'on' : ''}"><input type="radio" name="role-${esc(path)}" data-role="${r}" data-path="${esc(path)}" ${st.role === r ? 'checked' : ''}> ${esc(r)}</label>`).join('');
+      const forms = [...st.services].map((sid) => {
+        const t = st.test[sid];
+        return `<div class="svc"><h4>${esc(sid)} : <span class="hint">${esc(S.services[sid].label || '')}</span></h4>
+          ${Object.entries(S.services[sid].fields).map(([f, def]) => fieldHtml(path, sid, f, def)).join('')}
+          <div class="row" style="margin-top:4px"><button type="button" data-test="${sid}" data-path="${esc(path)}">ทดสอบการเชื่อมต่อ</button>
+          ${t ? `<span class="status ${t.ok ? 'ok' : 'err'}">${t.ok ? '✔' : '✘'} ${esc(t.message)}</span>` : ''}</div>
+        </div>`;
+      }).join('');
+      return `<div class="proj">
+        <div class="proj-head">
+          <div class="proj-title">โปรเจกต์ที่เลือกอันที่ ${i + 1} : <span>${esc(path)}</span></div>
+          ${i > 0 ? `<button class="link" data-copy="${esc(path)}" data-from="${esc(selected[i - 1])}">ใช้ค่าเดียวกับโปรเจกต์ก่อนหน้า</button>` : ''}
+        </div>
+        <div class="label">เลือกรูปแบบที่ต้องการใช้งาน (เลือกได้มากกว่า 1)</div><div class="chips">${svc}</div>
+        <div class="label">เลือก Role</div><div class="chips">${roles}</div>
+        ${forms}
+      </div>`;
+    }).join('');
+
+    const sumRows = selected.map((path, i) => {
+      const st = state[path];
+      const svcs = [...st.services].map((sid) => esc(sid) + (st.test[sid] ? (st.test[sid].ok ? ' ✔' : ' ✘') : '')).join(', ') || '<span class="status err">ยังไม่เลือก</span>';
+      return `<tr><td>${i + 1}</td><td>${esc(path)}</td><td>${st.role ? esc(st.role) : '<span class="status err">ยังไม่เลือก</span>'}</td><td>${svcs}</td></tr>`;
+    }).join('');
+
+    root.innerHTML = `
+      <section class="card">
+        <div class="step"><span class="num">1</span> เลือกโปรเจกต์ <span class="hint">(เลือกได้มากกว่า 1)</span></div>
+        <div class="grid">${projHtml}</div>
+        <div class="row"><input type="text" data-other placeholder="อื่น ๆ — พิมพ์ path เช่น D:\\Test"><button data-add>เพิ่ม</button></div>
+        <div data-othermsg></div>
+      </section>
+      <section class="card">
+        <div class="step"><span class="num">2</span> ตั้งค่าแต่ละโปรเจกต์</div>${cfgHtml}
+      </section>
+      <section class="card">
+        <div class="step"><span class="num">3</span> สรุป</div>
+        ${selected.length ? `<table><tr><th>#</th><th>โปรเจกต์</th><th>Role</th><th>รูปแบบ</th></tr>${sumRows}</table>` : '<p class="empty">ยังไม่มีข้อมูล</p>'}
+        ${S.claude ? '' : '<div class="msg warn">ไม่พบ Claude Code ในเครื่อง — จะบันทึกค่าให้ แต่ยังไม่ลงทะเบียน MCP (ให้ AI ที่ใช้อยู่ลงทะเบียนจาก .env ตาม AGENT.md)</div>'}
+      </section>`;
+    bind();
+    onChange?.(valid());
+  }
+
+  function bind() {
+    root.querySelectorAll('[data-pick]').forEach((el) => el.onchange = () => {
+      const p = el.dataset.pick;
+      if (el.checked) { selected.push(p); initState(p); } else selected.splice(selected.indexOf(p), 1);
+      render();
+    });
+    root.querySelectorAll('[data-svc]').forEach((el) => el.onchange = () => {
+      const st = state[el.dataset.path];
+      el.checked ? st.services.add(el.dataset.svc) : st.services.delete(el.dataset.svc);
+      render();
+    });
+    root.querySelectorAll('[data-role]').forEach((el) => el.onchange = () => { state[el.dataset.path].role = el.dataset.role; render(); });
+    root.querySelectorAll('input[data-f]').forEach((el) => el.oninput = () => {
+      state[el.dataset.path].fields[el.dataset.sid][el.dataset.f] = el.value;
+      delete state[el.dataset.path].test[el.dataset.sid];
+    });
+    root.querySelectorAll('[data-toggle]').forEach((b) => b.onclick = () => {
+      const inp = document.getElementById(b.dataset.toggle);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      b.textContent = inp.type === 'password' ? 'แสดง' : 'ซ่อน';
+    });
+    root.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => {
+      const from = state[b.dataset.from], to = state[b.dataset.copy];
+      to.services = new Set(from.services);
+      to.role = from.role;
+      to.fields = JSON.parse(JSON.stringify(from.fields));
+      to.copyFrom = b.dataset.from;
+      to.copyHasToken = { ...from.hasToken };
+      to.test = {};
+      render();
+    });
+    root.querySelectorAll('[data-test]').forEach((b) => b.onclick = async () => {
+      const path = b.dataset.path, sid = b.dataset.test, st = state[path];
+      b.disabled = true; b.textContent = 'กำลังทดสอบ…';
+      const r = await api('/api/test', {
+        source, project: path, copyFrom: !st.fields[sid].token && st.copyFrom ? st.copyFrom : undefined,
+        service: sid, fields: { ...defaults(sid), ...clean(st.fields[sid]) },
+      });
+      st.test[sid] = { ok: !!r.ok, message: r.message || r.error };
+      render();
+    });
+    $('[data-add]', root).onclick = async () => {
+      const inp = $('[data-other]', root);
+      const v = inp.value.trim();
+      if (!v) return;
+      const r = await api('/api/check-path', { path: v });
+      if (!r.ok) { $('[data-othermsg]', root).innerHTML = `<div class="msg err">${esc(r.message)}</div>`; return; }
+      if (!projects.has(r.path)) projects.set(r.path, { path: r.path, name: r.name, key: r.key });
+      if (!selected.includes(r.path)) { selected.push(r.path); initState(r.path); }
+      render();
+    };
+  }
+
+  const valid = () => selected.length > 0 && selected.every((p) => state[p].role && state[p].services.size);
+
+  render();
+  return {
+    valid,
+    payload: () => selected.map((path) => {
+      const st = state[path];
+      const fields = {};
+      for (const sid of st.services) fields[sid] = { ...st.fields[sid], ...(st.copyFrom ? { copyFrom: st.copyFrom } : {}) };
+      return { path, role: st.role, services: [...st.services], fields };
+    }),
+  };
+}
+
+// ============ Pages ============
+
+const pages = {
+  // ---- home ----
+  async '' (view) {
+    const a = S.active;
+    const inProfile = a.profile && S.profiles.some((p) => p.name === a.profile);
+    view.innerHTML = `
+      <h1>หน้าหลัก</h1>
+      <p class="sub">การตั้งค่า MCP ที่ใช้งานอยู่บนเครื่องนี้</p>
+      <section class="card">
+        <div class="stat">
+          <div><span>โปรไฟล์ที่ใช้อยู่</span><b>${a.profile ? esc(a.profile) : '—'}</b></div>
+          <div><span>โปรเจกต์</span><b>${a.projects.length}</b></div>
+          <div><span>โปรไฟล์ทั้งหมด</span><b>${S.profiles.length}</b></div>
+        </div>
+        ${!a.exists ? '<div class="msg warn">ยังไม่ได้ตั้งค่า — เริ่มที่ <a href="#/setup">ตั้งค่า</a></div>'
+          : !inProfile ? `<div class="msg warn">ค่าที่ใช้อยู่ยังไม่ได้บันทึกเป็นโปรไฟล์ — ถ้าสลับโปรไฟล์ ค่านี้จะหาย
+              <div class="row"><input type="text" id="asName" placeholder="ตั้งชื่อโปรไฟล์ เช่น เคส A"><button id="asSave">บันทึกเป็นโปรไฟล์</button></div><div id="asMsg"></div></div>` : ''}
+      </section>
+      <section class="card">
+        <div class="step">โปรเจกต์ที่ใช้งานอยู่</div>
+        ${a.projects.length ? `<table><tr><th>โปรเจกต์</th><th>Role</th><th>รูปแบบ</th></tr>${a.projects.map((p) =>
+          `<tr><td><b>${esc(p.name)}</b><div class="ppath">${esc(p.path)}</div></td><td>${esc(p.role)}</td><td>${esc(p.services.join(', '))}</td></tr>`).join('')}</table>`
+          : '<p class="empty">ยังไม่มี</p>'}
+        <div class="row"><a href="#/setup"><button>แก้ไขค่าที่ใช้อยู่</button></a><a href="#/switch"><button>สลับโปรไฟล์</button></a><a href="#/profiles"><button>จัดการโปรไฟล์</button></a><a href="#/chat"><button class="primary">เริ่มแชท</button></a></div>
+      </section>
+      <section class="card">
+        <div class="step">ล้างข้อมูล</div>
+        <p class="hint">ลบ .env, โปรไฟล์ทั้งหมด (${S.profiles.length}), ประวัติแชท และถอด MCP ที่ระบบนี้ลงทะเบียนไว้ในทุกโปรเจกต์ —
+          ไม่ลบบทสนทนาที่ AI แต่ละตัวเก็บเอง · ใช้คำสั่ง <code>mcp reset</code> ใน CMD แทนได้</p>
+        <div class="row"><button class="danger" id="resetAll">ล้างข้อมูลทั้งหมด</button></div>
+        <div id="resetMsg"></div>
+      </section>`;
+    setBar('');
+    $('#resetAll').onclick = async () => {
+      if (!confirm('ล้างข้อมูลทั้งหมด?\n\n- .env\n- โปรไฟล์ทั้งหมด\n- ประวัติแชท\n- MCP ที่ลงทะเบียนไว้ในแต่ละโปรเจกต์\n\nย้อนกลับไม่ได้')) return;
+      $('#resetAll').disabled = true; $('#resetAll').textContent = 'กำลังล้าง…';
+      const r = await api('/api/reset', {});
+      if (r.status !== 200) { $('#resetMsg').innerHTML = errBox(r); $('#resetAll').disabled = false; $('#resetAll').textContent = 'ล้างข้อมูลทั้งหมด'; return; }
+      await loadState();
+      await route();
+      $('#resetMsg').innerHTML = `<div class="msg ok"><b>ล้างแล้ว</b> · ลบ: ${esc(r.removed.join(', ') || 'ไม่มีข้อมูล')}
+        ${r.unregistered.length ? `<br>ถอด MCP จาก: ${r.unregistered.map(esc).join(', ')}` : ''}</div>`;
+    };
+    const btn = $('#asSave');
+    if (btn) btn.onclick = async () => {
+      const r = await api('/api/save-active-as-profile', { name: $('#asName').value });
+      if (r.status !== 200) { $('#asMsg').innerHTML = errBox(r); return; }
+      await loadState(); route();
+    };
+  },
+
+  // ---- setup (active .env) ----
+  async setup(view) {
+    view.innerHTML = `<h1>ตั้งค่า</h1>
+      <p class="sub">แก้ค่าที่ใช้งานอยู่ (.env) ${S.active.profile ? `· โปรไฟล์ <b>${esc(S.active.profile)}</b> จะถูกอัปเดตด้วย` : ''}</p>
+      <div id="ed"></div><div id="res"></div>`;
+    const ed = Editor($('#ed'), { initial: S.active.projects, source: { kind: 'active' }, onChange: (ok) => { const b = $('#save'); if (b) b.disabled = !ok; } });
+    setBar(`<label class="hint"><input type="checkbox" id="asProfile" ${S.active.profile ? 'checked disabled' : ''}> บันทึกเป็นโปรไฟล์ด้วย</label>
+      <input type="text" id="profName" style="max-width:220px" placeholder="ชื่อโปรไฟล์ เช่น เคส A" value="${esc(S.active.profile)}" ${S.active.profile ? 'disabled' : ''}>
+      <button class="primary" id="save" ${ed.valid() ? '' : 'disabled'}>บันทึกและลงทะเบียน MCP</button>`);
+    $('#save').onclick = async () => {
+      const btn = $('#save');
+      btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+      const name = S.active.profile ? S.active.profile : ($('#asProfile').checked ? $('#profName').value : '');
+      const r = await api('/api/save-active', { projects: ed.payload(), saveAsProfile: name || undefined });
+      btn.disabled = false; btn.textContent = 'บันทึกและลงทะเบียน MCP';
+      if (r.status !== 200) { $('#res').innerHTML = errBox(r); return; }
+      await loadState();
+      $('#res').innerHTML = `<section class="card"><div class="msg ok"><b>บันทึกแล้ว</b>${r.profile ? ` · โปรไฟล์ ${esc(r.profile)}` : ''}</div>${resultTable(r)}
+        <p class="hint">figma แบบไม่มี token → เปิด AI ในโปรเจกต์นั้น → <code>/mcp</code> → figma → Authenticate</p>
+        <div class="row"><a href="#/chat"><button class="primary">เริ่มแชท →</button></a></div></section>`;
+      $('#res').scrollIntoView({ behavior: 'smooth' });
+    };
+  },
+
+  // ---- profiles ----
+  async profiles(view, arg) {
+    if (arg !== undefined) return profileEditor(view, arg);
+    view.innerHTML = `<h1>โปรไฟล์</h1>
+      <p class="sub">เก็บชุดโปรเจกต์ + บัญชี + Role ไว้ใช้ซ้ำ เช่น เคส A, เคส B — แยกไฟล์จาก .env</p>
+      <section class="card">
+        <div class="row" style="margin-top:0"><a href="#/profiles/new"><button class="primary">+ สร้างโปรไฟล์ใหม่</button></a>
+        ${S.active.exists ? '<a href="#/profiles/new-from-active"><button>สร้างจากค่าที่ใช้อยู่</button></a>' : ''}</div>
+        ${S.profiles.length ? S.profiles.map((p) => `
+          <div class="pcard ${p.name === S.active.profile ? 'on' : ''}">
+            <div class="pcard-head">
+              <div><span class="pcard-name">${esc(p.name)}</span>${p.name === S.active.profile ? '<span class="badge blue">ใช้อยู่</span>' : ''}
+                <div class="hint">แก้ไขล่าสุด ${fmtDate(p.updated)}</div></div>
+              <div class="actions">
+                ${p.name === S.active.profile ? '' : `<button data-use="${esc(p.name)}">ใช้โปรไฟล์นี้</button>`}
+                <a href="#/profiles/${encodeURIComponent(p.name)}"><button>แก้ไข</button></a>
+                <button class="danger" data-del="${esc(p.name)}">ลบ</button>
+              </div>
+            </div>
+            ${projectList(p.projects)}
+          </div>`).join('') : '<p class="empty" style="margin-top:14px">ยังไม่มีโปรไฟล์</p>'}
+        <div id="res"></div>
+      </section>`;
+    setBar('');
+    view.querySelectorAll('[data-use]').forEach((b) => b.onclick = () => doSwitch(b.dataset.use, $('#res')));
+    view.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+      if (!confirm(`ลบโปรไฟล์ "${b.dataset.del}"?\n(ไม่กระทบค่าที่ใช้อยู่ตอนนี้)`)) return;
+      const r = await api('/api/delete-profile', { name: b.dataset.del });
+      if (r.status !== 200) { $('#res').innerHTML = errBox(r); return; }
+      await loadState(); route();
+    });
+  },
+
+  // ---- switch ----
+  async switch(view) {
+    const a = S.active;
+    const inProfile = a.profile && S.profiles.some((p) => p.name === a.profile);
+    view.innerHTML = `<h1>สลับโปรไฟล์</h1>
+      <p class="sub">เลือกชุดการทำงาน — ระบบจะเปลี่ยน .env, Role, สิทธิ์ และลงทะเบียน MCP ใหม่ตามโปรไฟล์</p>
+      ${a.exists && !inProfile ? '<div class="msg warn">ค่าที่ใช้อยู่ยังไม่ได้บันทึกเป็นโปรไฟล์ — ถ้าสลับ ค่านี้จะหาย (บันทึกได้ที่ <a href="#/">หน้าหลัก</a>)</div>' : ''}
+      <section class="card">
+        ${S.profiles.length ? S.profiles.map((p) => `
+          <label class="pick pcard ${p.name === a.profile ? 'on' : ''}">
+            <div class="pcard-head"><div><input type="radio" name="pick" value="${esc(p.name)}" ${p.name === a.profile ? 'checked' : ''}>
+              <span class="pcard-name">${esc(p.name)}</span>${p.name === a.profile ? '<span class="badge blue">ใช้อยู่</span>' : ''}</div></div>
+            ${projectList(p.projects)}
+          </label>`).join('') : '<p class="empty">ยังไม่มีโปรไฟล์ — <a href="#/profiles/new">สร้างโปรไฟล์</a></p>'}
+        <div id="res"></div>
+      </section>`;
+    setBar(S.profiles.length ? '<span class="hint">MCP ของโปรเจกต์ที่ไม่อยู่ในโปรไฟล์ใหม่จะถูกถอดออก</span><button class="primary" id="go">สลับไปใช้</button>' : '');
+    view.querySelectorAll('input[name=pick]').forEach((el) => el.onchange = () => {
+      view.querySelectorAll('.pick').forEach((l) => l.classList.toggle('on', $('input', l).checked));
+    });
+    const go = $('#go');
+    if (go) go.onclick = () => {
+      const v = $('input[name=pick]:checked', view)?.value;
+      if (v) doSwitch(v, $('#res'));
+    };
+  },
+};
+
+// ============ Chat ============
+
+// Small, safe markdown: code blocks, inline code, bold, headings, lists, links
+function md(src) {
+  const blocks = String(src || '').split(/```/);
+  return blocks.map((part, i) => {
+    if (i % 2) return `<pre><code>${esc(part.replace(/^[\w-]*\n/, ''))}</code></pre>`;
+    const inline = (s) => esc(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return part.split(/\n{2,}/).map((para) => {
+      const lines = para.split('\n').filter((l) => l.trim());
+      if (!lines.length) return '';
+      if (lines.every((l) => /^\s*[-*]\s+/.test(l))) return `<ul>${lines.map((l) => `<li>${inline(l.replace(/^\s*[-*]\s+/, ''))}</li>`).join('')}</ul>`;
+      if (lines.every((l) => /^\s*\d+\.\s+/.test(l))) return `<ol>${lines.map((l) => `<li>${inline(l.replace(/^\s*\d+\.\s+/, ''))}</li>`).join('')}</ol>`;
+      if (/^#{1,6}\s/.test(lines[0]) && lines.length === 1) return `<p><b>${inline(lines[0].replace(/^#+\s/, ''))}</b></p>`;
+      if (lines.every((l) => /^\s*\|/.test(l))) {
+        const rows = lines.filter((l) => !/^\s*\|[\s:|-]+\|\s*$/.test(l)).map((l) => l.trim().replace(/^\||\|$/g, '').split('|'));
+        return `<table>${rows.map((r, ri) => `<tr>${r.map((c) => ri ? `<td>${inline(c.trim())}</td>` : `<th>${inline(c.trim())}</th>`).join('')}</tr>`).join('')}</table>`;
+      }
+      return `<p>${lines.map(inline).join('<br>')}</p>`;
+    }).join('');
+  }).join('');
+}
+
+const agentLabel = (id) => (S.agents.find((g) => g.id === (id || 'claude')) || { label: id || 'Claude Code' }).label;
+const OPEN_CMD = /^\s*(เปิดโปรเจ(ค|กต์)|open project)\b/i;
+const toolLabel = (name) => name.replace(/^mcp__(\w+?)__/, '$1 · ').replace(/_/g, ' ');
+
+// ============ Git login ============
+pages.git = async (view) => {
+  view.innerHTML = `<h1>Git</h1>
+    <p class="sub">ล็อกอิน GitLab / GitHub ให้ git ใน CMD และ AI ในแชท pull / fetch ได้โดยไม่ต้องกรอกรหัส</p>
+    <section class="card">
+      <div class="step">สถานะแต่ละโปรเจกต์ <button id="gRefresh" style="margin-left:auto">ตรวจใหม่</button></div>
+      <div id="gStatus"><p class="hint">กำลังตรวจ… (ลอง ls-remote ทีละโปรเจกต์ แบบไม่มีหน้าต่างถามรหัส)</p></div>
+    </section>
+    <section class="card">
+      <div class="step"><span class="num">1</span> สร้าง token ใน Chrome</div>
+      <div class="form-grid">
+        <label>Host<select id="gHost"><option>gitlab.com</option></select></label>
+      </div>
+      <div class="row"><button class="primary" id="gOpen">เปิด Chrome สร้าง token</button>
+        <span class="hint">ล็อกอิน → คงสิทธิ์ read_repository + write_repository → กด Create token → คัดลอก</span></div>
+      <div id="gOpenMsg"></div>
+      <div class="step" style="margin-top:22px"><span class="num">2</span> บันทึก</div>
+      <div class="field"><label class="fl" for="gUser">username <b>*</b></label><input type="text" id="gUser" placeholder="ชื่อผู้ใช้ (ไม่ต้องมี @)" autocomplete="off"></div>
+      <div class="field"><label class="fl" for="gToken">token <b>*</b></label><div class="pw"><input type="password" id="gToken" placeholder="วาง Personal access token" autocomplete="off"><button type="button" id="gShow">แสดง</button></div>
+        <div class="fhelp">เก็บใน Windows Credential Manager (git:https://&lt;host&gt;) — ไม่เก็บใน .env / ไม่ส่งกลับมาที่หน้านี้</div></div>
+      <div class="row"><button class="primary" id="gSave">บันทึกและทดสอบ</button></div>
+      <div id="gRes"></div>
+    </section>`;
+  setBar('');
+  const table = (repos) => repos.length ? `<table><tr><th>โปรเจกต์</th><th>remote</th><th>สถานะ</th></tr>${repos.map((x) => `
+    <tr><td><b>${esc(x.name)}</b><div class="ppath">${esc(x.path)}</div></td><td class="ppath">${esc(x.url || '-')}</td>
+      <td>${x.ok ? '<span class="status ok">✔ pull ได้</span>' : `<span class="status err">✘ ${esc(x.error)}</span>`}${x.ssh ? '<div class="hint">SSH — ใช้ SSH key ไม่ต้องใช้ token</div>' : ''}</td></tr>`).join('')}</table>`
+    : '<p class="empty">ไม่พบโปรเจกต์ที่เป็น git repo ข้าง ๆ โฟลเดอร์ mcp</p>';
+  const load = async () => {
+    $('#gStatus').innerHTML = '<p class="hint">กำลังตรวจ…</p>';
+    const r = await api('/api/git/status');
+    $('#gStatus').innerHTML = table(r.repos || []);
+    const hosts = r.hosts?.length ? r.hosts : ['gitlab.com'];
+    const cur = $('#gHost').value;
+    $('#gHost').innerHTML = hosts.map((h) => `<option ${h === cur ? 'selected' : ''}>${esc(h)}</option>`).join('');
+  };
+  $('#gRefresh').onclick = load;
+  $('#gShow').onclick = () => { const i = $('#gToken'); i.type = i.type === 'password' ? 'text' : 'password'; $('#gShow').textContent = i.type === 'password' ? 'แสดง' : 'ซ่อน'; };
+  $('#gOpen').onclick = async () => {
+    const r = await api('/api/git/open-token', { host: $('#gHost').value });
+    $('#gOpenMsg').innerHTML = `<p class="hint">${r.chrome ? 'เปิด Chrome แล้ว' : 'ไม่พบ Chrome — เปิดเบราว์เซอร์หลักแทน'} · สร้าง token เสร็จแล้วกลับมากรอกข้อ 2</p>`;
+  };
+  $('#gSave').onclick = async () => {
+    const btn = $('#gSave');
+    btn.disabled = true; btn.textContent = 'กำลังบันทึกและทดสอบ…';
+    const r = await api('/api/git/login', { host: $('#gHost').value, username: $('#gUser').value, token: $('#gToken').value });
+    btn.disabled = false; btn.textContent = 'บันทึกและทดสอบ';
+    if (r.status !== 200) { $('#gRes').innerHTML = errBox(r); return; }
+    $('#gToken').value = '';
+    const ok = r.repos.filter((x) => x.ok).length;
+    $('#gRes').innerHTML = `<div class="msg ${ok === r.repos.length ? 'ok' : 'warn'}"><b>บันทึกแล้ว</b> · pull ได้ ${ok}/${r.repos.length} โปรเจกต์</div>${table(r.repos)}`;
+    load();
+  };
+  load();
+};
+
+pages.chat = async (view) => {
+  const a = S.active;
+  const chatting = a.chat && a.profile && S.profiles.some((p) => p.name === a.profile);
+  if (chatting) return chatRoom(view, { profile: a.profile, ...a.chat });
+
+  if (!S.profiles.length) {
+    view.innerHTML = `<h1>แชท</h1><section class="card"><div class="msg warn">ต้องมีโปรไฟล์ก่อนเริ่มแชท —
+      ${a.exists ? '<a href="#/">บันทึกค่าที่ใช้อยู่เป็นโปรไฟล์</a> หรือ ' : ''}<a href="#/profiles/new">สร้างโปรไฟล์</a></div></section>`;
+    setBar('');
+    return;
+  }
+  chatSetup(view);
+};
+
+// Old chats: reopen (continue with the same session) or delete
+async function loadOldChats(view) {
+  const box = $('#oldChats', view);
+  if (!box) return;
+  const r = await api('/api/chats');
+  const list = r.chats || [];
+  if (!list.length) { box.innerHTML = '<p class="empty">ยังไม่มีแชทเก่า</p>'; return; }
+  const projName = (p) => String(p || '').split(/[\\/]/).pop();
+  box.innerHTML = `<table><tr><th>แชท</th><th>AI</th><th>โปรไฟล์ · โปรเจกต์</th><th>ข้อความ</th><th>ล่าสุด</th><th></th></tr>${list.map((c) => `
+    <tr>
+      <td><b>${esc(c.title || '(ยังไม่มีข้อความ)')}</b>${c.active ? '<span class="badge blue">ใช้อยู่</span>' : ''}
+        <div class="ppath">${esc(S.chatModes[c.mode] || c.mode || '')}</div></td>
+      <td>${esc(agentLabel(c.agent))}</td>
+      <td>${esc(c.profile)}<div class="ppath">${(c.dirs || [c.cwd]).map((d) => esc(projName(d))).join(' + ')}</div></td>
+      <td>${c.messages || 0}</td>
+      <td class="hint">${c.updated ? fmtDate(c.updated) : '-'}</td>
+      <td><div class="actions"><button data-open="${esc(c.session)}">เปิด</button><button class="danger" data-del="${esc(c.session)}">ลบ</button></div></td>
+    </tr>`).join('')}</table>
+    <div id="oldMsg"></div>`;
+  box.querySelectorAll('[data-open]').forEach((b) => b.onclick = async () => {
+    b.disabled = true; b.textContent = 'กำลังเปิด…';
+    const o = await api('/api/chat/reopen', { session: b.dataset.open });
+    if (o.status !== 200) { $('#oldMsg', box).innerHTML = errBox(o); b.disabled = false; b.textContent = 'เปิด'; return; }
+    await loadState();
+    chatRoom(view, o);
+  });
+  box.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+    const c = list.find((x) => x.session === b.dataset.del);
+    if (!confirm(`ลบแชท "${c?.title || b.dataset.del}"?\n\nลบประวัติบนหน้าเว็บ (ไม่ลบบทสนทนาที่ AI เก็บเอง)\nย้อนกลับไม่ได้`)) return;
+    const o = await api('/api/chat/delete', { session: b.dataset.del });
+    if (o.status !== 200) { $('#oldMsg', box).innerHTML = errBox(o); return; }
+    await loadState();
+    loadOldChats(view);
+  });
+}
+
+function chatSetup(view, preset = {}) {
+  const pick = preset.profile || S.active.profile || S.profiles[0].name;
+  view.innerHTML = `<h1>เริ่มแชท</h1>
+    <p class="sub">เลือกโปรไฟล์ → คุยกับ AI แบบเรียลไทม์ · session จะถูกเก็บลง .env (MCP_CHAT_SESSION) เพื่อคุยต่อที่อื่นได้</p>
+    <section class="card">
+      <div class="form-grid">
+        <label>AI<select id="cAgent">${S.agents.map((g) => `<option value="${esc(g.id)}" ${g.installed ? '' : 'disabled'}>${esc(g.label)}${g.installed ? '' : ' (ยังไม่ติดตั้ง)'}</option>`).join('')}</select></label>
+        <label>โปรไฟล์<select id="cProfile">${S.profiles.map((p) => `<option ${p.name === pick ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
+        <label>โฟลเดอร์หลักของ session<select id="cProject"></select></label>
+        <label>สิทธิ์ของ AI<select id="cMode">${Object.entries(S.chatModes).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
+      </div>
+      <div class="label">โปรเจกต์ในแชท (เลือกได้มากกว่า 1)</div>
+      <div class="chips" id="cDirs"></div>
+      <div id="cInfo"></div>
+      <div id="res"></div>
+    </section>
+    <section class="card">
+      <div class="step">แชทเก่า <span class="hint">กดเปิดเพื่อคุยต่อ · ลบได้</span></div>
+      <div id="oldChats"><p class="hint">กำลังโหลด…</p></div>
+    </section>`;
+  loadOldChats(view);
+  let lastProfile = null;
+  let dirs = [];
+  const fill = () => {
+    const p = S.profiles.find((x) => x.name === $('#cProfile').value);
+    if (lastProfile !== p.name) {
+      lastProfile = p.name;
+      dirs = p.chat?.dirs?.length ? p.projects.map((x) => x.path).filter((x) => p.chat.dirs.includes(x)) : p.projects.map((x) => x.path);
+      if (!dirs.length) dirs = p.projects.map((x) => x.path);
+      if (p.chat?.mode) $('#cMode').value = p.chat.mode;
+      if (!S.launcher?.installed && p.chat?.agent && S.agents.some((g) => g.id === p.chat.agent && g.installed)) $('#cAgent').value = p.chat.agent;
+    }
+    $('#cDirs').innerHTML = p.projects.map((x) => `<label class="check ${dirs.includes(x.path) ? 'on' : ''}"><input type="checkbox" data-dir="${esc(x.path)}" ${dirs.includes(x.path) ? 'checked' : ''}> ${esc(x.name)} <span class="hint">· ${esc(x.role)} · ${esc(x.services.join(', '))}</span></label>`).join('');
+    $('#cDirs').querySelectorAll('[data-dir]').forEach((el) => el.onchange = () => {
+      dirs = el.checked ? [...dirs, el.dataset.dir] : dirs.filter((d) => d !== el.dataset.dir);
+      fill();
+    });
+    const prevMain = $('#cProject').value || p.chat?.cwd;
+    const chosen = p.projects.filter((x) => dirs.includes(x.path));
+    $('#cProject').innerHTML = chosen.map((x) => `<option value="${esc(x.path)}" ${x.path === prevMain ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
+    $('#cProject').disabled = chosen.length < 2;
+    const canResume = p.chat?.session && p.chat.cwd === $('#cProject').value && chosen.length > 0 && (p.chat.agent || 'claude') === $('#cAgent').value;
+    $('#cInfo').innerHTML = `${p.name !== S.active.profile ? `<div class="msg warn">จะสลับไปใช้โปรไฟล์ "${esc(p.name)}" ก่อนเริ่มแชท</div>` : ''}
+      ${canResume ? `<p class="hint">มี session เดิม <span class="sid">${esc(p.chat.session)}</span> · ล่าสุด ${fmtDate(p.chat.updated)}</p>` : ''}`;
+    setBar(`<span class="hint">${esc(S.chatModes[$('#cMode').value])}</span><span class="actions">
+      ${canResume ? '<button id="cResume" class="primary">คุยต่อ session เดิม</button>' : ''}
+      <button id="cNew" class="${canResume ? '' : 'primary'}" ${chosen.length ? '' : 'disabled'}>เริ่มแชทใหม่</button></span>`);
+    const go = async (resume) => {
+      $('#res').innerHTML = '<p class="hint">กำลังเตรียม…</p>';
+      const r = await api('/api/chat/start', { profile: p.name, cwd: $('#cProject').value, dirs, mode: $('#cMode').value, agent: $('#cAgent').value, resume });
+      if (r.status !== 200) { $('#res').innerHTML = errBox(r); return; }
+      await loadState();
+      chatRoom(view, r);
+    };
+    if ($('#cResume')) $('#cResume').onclick = () => go(true);
+    $('#cNew').onclick = () => go(false);
+  };
+  $('#cProfile').onchange = fill;
+  $('#cProject').onchange = fill;
+  $('#cMode').onchange = fill;
+  $('#cAgent').onchange = fill;
+  // The AI that ran "run mcp" is the chat AI — no need to pick one
+  const agentBox = $('#cAgent').closest('label');
+  if (S.launcher?.installed) {
+    $('#cAgent').value = S.launcher.id;
+    agentBox.hidden = true;
+    agentBox.parentElement.insertAdjacentHTML('beforebegin', `<p class="hint" id="cAgentInfo">AI: <b>${esc(S.launcher.label)}</b> (ตัวที่สั่ง run mcp) · <a href="#" id="cAgentChange">เปลี่ยน</a></p>`);
+    $('#cAgentChange').onclick = (e) => { e.preventDefault(); agentBox.hidden = false; $('#cAgentInfo').remove(); };
+  }
+  if (!$('#cAgent').value || $('#cAgent').selectedOptions[0]?.disabled) $('#cAgent').value = (S.agents.find((g) => g.installed) || {}).id || '';
+  fill();
+}
+
+async function chatRoom(view, c) {
+  const h = c.history || (await api('/api/chat/history?session=' + encodeURIComponent(c.session))).history || [];
+  const proj = S.active.projects.find((p) => p.path === c.cwd);
+  const inChat = (c.dirs?.length ? c.dirs : [c.cwd]).map((d) => S.active.projects.find((p) => p.path === d)?.name || d);
+  view.innerHTML = `
+    <section class="card">
+      <div class="chat-head">
+        <div class="chat-meta"><b>${esc(agentLabel(c.agent))}</b> · <b>${esc(c.profile)}</b> · ${inChat.map((n, i) => i ? esc(n) : `<b>${esc(n)}</b>`).join(' + ')} · Role ${esc(proj?.role || '-')} · ${esc(S.chatModes[c.mode] || c.mode)}
+          <div>session <span class="sid" id="sid" title="คลิกเพื่อคัดลอก" style="cursor:pointer">${esc(c.session)}</span> <span class="hint">(เก็บใน .env)</span></div></div>
+        <div class="actions">
+          <button id="openCode" class="primary" title="เปิด VS Code + Claude Code ด้วย session เดิม">เปิดโปรเจค</button>
+          <button id="openTerm" title="เปิด Claude Code ใน Terminal ด้วย session เดิม">เปิดใน Terminal</button>
+          <button id="newChat">เปลี่ยน / เริ่มใหม่</button>
+        </div>
+      </div>
+      <div class="msgs" id="msgs"></div>
+    </section>`;
+  const box = $('#msgs');
+  const add = (cls, html) => { const d = document.createElement('div'); d.className = 'bubble ' + cls; d.innerHTML = html; box.appendChild(d); return d; };
+  const bottom = () => window.scrollTo(0, document.body.scrollHeight);
+  if (!h.length) add('sys', 'เริ่มคุยได้เลย · พิมพ์ "เปิดโปรเจค" เมื่อต้องการคุยต่อใน VS Code + Claude Code ด้วย session เดิม');
+  for (const m of h) {
+    if (m.role === 'user') add('user', esc(m.text));
+    else add('ai', (m.tools?.length ? m.tools.map((t) => `<span class="tool ok">🔧 ${esc(toolLabel(t))}</span>`).join('') : '') + md(m.text || '_(ไม่มีข้อความ)_'));
+  }
+  bottom();
+
+  setBar(`<div class="composer"><textarea id="inp" rows="1" placeholder="พิมพ์ข้อความ… (Enter ส่ง · Shift+Enter ขึ้นบรรทัดใหม่)"></textarea>
+    <button class="primary" id="send">ส่ง</button><button id="stop" hidden>หยุด</button></div>`);
+  const inp = $('#inp');
+  inp.oninput = () => { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 180) + 'px'; };
+  inp.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('#send').click(); } };
+  inp.focus();
+
+  const openProject = async (target) => {
+    const r = await api('/api/chat/open', { session: c.session, target });
+    if (r.status !== 200) { add('sys', (r.errors || [r.error]).map(esc).join('<br>')); return; }
+    const cmdInfo = r.command ? ` <span class="sid">${esc(r.command)}</span>` : '';
+    if (r.target === 'vscode+terminal') {
+      add('sys', `เปิด VS Code ที่ ${esc(r.cwd)} และเปิด ${esc(agentLabel(r.agent))} ใน Terminal ด้วย session เดิม${cmdInfo} — คุยต่อในหน้าต่าง Terminal ได้เลย`);
+      bottom();
+      return;
+    }
+    const name = esc(agentLabel(r.agent));
+    add('sys', r.target === 'vscode'
+      ? `กำลังเปิด VS Code ที่ ${esc(r.cwd)} แล้วเปิด ${name} ด้วยแชทเดิม — คุยต่อในแผง ${name} ได้เลย${r.openedFolder ? '' : '<br>ไม่พบคำสั่ง code ในเครื่อง — ให้เปิดโฟลเดอร์ใน VS Code เอง แล้วกดลิงก์ด้านล่าง'}
+        <br>ถ้าแชทเดิมไม่ขึ้นภายใน 10 วินาที: คลิกที่หน้าต่าง VS Code นั้นก่อน แล้วกด <a href="${esc(r.uri)}">เปิดแชทใน VS Code</a>`
+      : `เปิด ${name} ใน Terminal ที่ ${esc(r.cwd)} แล้ว${cmdInfo} — คุยต่อในหน้าต่างนั้นได้เลย`);    bottom();
+  };
+  $('#openTerm').onclick = () => openProject('terminal');
+  $('#openCode').onclick = () => openProject('vscode');
+  $('#newChat').onclick = () => chatSetup(view, { profile: c.profile });
+  $('#sid').onclick = () => navigator.clipboard?.writeText(c.session).then(() => { $('#sid').textContent = 'คัดลอกแล้ว'; setTimeout(() => { $('#sid').textContent = c.session; }, 1200); });
+
+  $('#stop').onclick = () => api('/api/chat/stop', { session: c.session });
+  const busy = (on) => { if ($('#send')) { $('#send').hidden = on; $('#stop').hidden = !on; } };
+
+  // Show one AI reply from an NDJSON stream (a new send, or re-attaching to a reply still running)
+  const renderRun = async (request) => {
+    const ai = add('ai cursor', '');
+    const tools = document.createElement('div');
+    const body = document.createElement('div');
+    ai.append(tools, body);
+    let reply = '';
+    const toolEls = {};
+    busy(true);
+    bottom();
+    try {
+      const res = await request();
+      if (!res.ok) { const r = await res.json().catch(() => ({})); throw new Error((r.errors || [r.error || res.status]).join(' ')); }
+      if (!(res.headers.get('content-type') || '').includes('ndjson')) { ai.remove(); busy(false); return; } // nothing running
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        if (!box.isConnected) { reader.cancel(); return; } // left the chat page: the reply keeps running on the server
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, i); buf = buf.slice(i + 1);
+          if (!line.trim()) continue;
+          const ev = JSON.parse(line);
+          if (ev.t === 'text') { reply += ev.d; body.innerHTML = md(reply); }
+          else if (ev.t === 'tool') {
+            const el = document.createElement('span');
+            el.className = 'tool'; el.textContent = '⏳ ' + toolLabel(ev.name);
+            el.title = JSON.stringify(ev.input || {}, null, 1).slice(0, 800);
+            toolEls[ev.id] = el; tools.appendChild(el);
+          } else if (ev.t === 'tool-result' && toolEls[ev.id]) {
+            const el = toolEls[ev.id];
+            el.className = 'tool ' + (ev.error ? 'err' : 'ok');
+            el.textContent = (ev.error ? '✘ ' : '✔ ') + el.textContent.slice(2);
+          } else if (ev.t === 'done') {
+            if (ev.denied?.length) add('sys', `AI ขอใช้ ${ev.denied.map(esc).join(', ')} แต่หน้าเว็บไม่อนุญาต — พิมพ์ "เปิดโปรเจค" เพื่อทำต่อใน Claude Code`);
+          } else if (ev.t === 'error') add('sys', esc(ev.message));
+          bottom();
+        }
+      }
+    } catch (e) {
+      if (box.isConnected) add('sys', 'ส่งไม่สำเร็จ: ' + esc(e.message));
+    }
+    if (!box.isConnected) return;
+    ai.classList.remove('cursor');
+    if (!reply && !tools.childElementCount) body.innerHTML = '<span class="hint">(ไม่มีข้อความ)</span>';
+    busy(false);
+    inp.focus();
+    bottom();
+  };
+
+  $('#send').onclick = async () => {
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = ''; inp.oninput();
+    add('user', esc(text));
+    if (OPEN_CMD.test(text)) { await openProject('vscode'); return; }
+    await renderRun(() => fetch('/api/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: c.session, text }) }));
+  };
+
+  // Came back while the AI is still working → pick up its reply where it is now
+  const now = await api('/api/chat/history?session=' + encodeURIComponent(c.session));
+  if (now.running) {
+    add('sys', 'AI ยังทำงานอยู่ — แสดงต่อจากที่ทำไปแล้ว');
+    renderRun(() => fetch('/api/chat/stream?session=' + encodeURIComponent(c.session) + '&from=0'));
+  }
+}
+
+async function profileEditor(view, arg) {
+  const isNew = arg === 'new' || arg === 'new-from-active';
+  const fromActive = arg === 'new-from-active';
+  const oldName = isNew ? '' : decodeURIComponent(arg);
+  let initial = fromActive ? S.active.projects : [];
+  if (!isNew) {
+    const r = await api('/api/profile?name=' + encodeURIComponent(oldName));
+    if (r.status !== 200) { view.innerHTML = errBox(r); return; }
+    initial = r.projects;
+  }
+  const isActive = !isNew && oldName === S.active.profile;
+  view.innerHTML = `<h1>${isNew ? 'สร้างโปรไฟล์ใหม่' : 'แก้ไขโปรไฟล์'}</h1>
+    <p class="sub"><a href="#/profiles">← กลับไปหน้าโปรไฟล์</a>${isActive ? ' · โปรไฟล์นี้ใช้อยู่ — บันทึกแล้วจะมีผลทันที' : ''}</p>
+    <section class="card"><div class="step">ชื่อโปรไฟล์</div>
+      <input type="text" id="pname" value="${esc(oldName)}" placeholder="เช่น เคส A · ลูกค้า X · Sprint 12"></section>
+    <div id="ed"></div><div id="res"></div>`;
+  const source = isNew ? (fromActive ? { kind: 'active' } : null) : { kind: 'profile', name: oldName };
+  const ed = Editor($('#ed'), { initial, source, onChange: (ok) => { const b = $('#save'); if (b) b.disabled = !ok; } });
+  setBar(`${isActive ? '' : '<label class="hint"><input type="checkbox" id="apply"> ใช้โปรไฟล์นี้ทันทีหลังบันทึก</label>'}
+    <button class="primary" id="save" ${ed.valid() ? '' : 'disabled'}>บันทึกโปรไฟล์</button>`);
+  $('#save').onclick = async () => {
+    const btn = $('#save');
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+    const r = await api('/api/save-profile', {
+      name: $('#pname').value, oldName: oldName || undefined, copyFromActive: fromActive,
+      projects: ed.payload(), apply: $('#apply')?.checked,
+    });
+    btn.disabled = false; btn.textContent = 'บันทึกโปรไฟล์';
+    if (r.status !== 200) { $('#res').innerHTML = errBox(r); $('#res').scrollIntoView({ behavior: 'smooth' }); return; }
+    await loadState();
+    $('#res').innerHTML = `<section class="card"><div class="msg ok"><b>บันทึกโปรไฟล์ "${esc(r.name)}" แล้ว</b>${r.applied ? ' · ใช้งานอยู่ตอนนี้' : ''}</div>
+      ${r.applied ? resultTable(r) : ''}<div class="row"><a href="#/profiles"><button>กลับไปหน้าโปรไฟล์</button></a></div></section>`;
+    $('#res').scrollIntoView({ behavior: 'smooth' });
+    if (oldName !== r.name) history.replaceState(null, '', '#/profiles/' + encodeURIComponent(r.name));
+  };
+}
+
+async function doSwitch(name, box) {
+  box.innerHTML = '<p class="hint">กำลังสลับ…</p>';
+  const r = await api('/api/switch', { name });
+  if (r.status !== 200) { box.innerHTML = errBox(r); return; }
+  await loadState();
+  box.innerHTML = `<div class="msg ok"><b>ใช้โปรไฟล์ "${esc(r.profile)}" แล้ว</b></div>${resultTable(r)}
+    <p class="hint">เปิด AI ในโปรเจกต์ใหม่อีกครั้งเพื่อให้โหลด MCP ชุดใหม่</p>`;
+  box.scrollIntoView({ behavior: 'smooth' });
+  document.querySelectorAll('.pcard').forEach((c) => c.classList.remove('on'));
+}
+
+async function route() {
+  const [, page = '', ...rest] = (location.hash.slice(1) || '/').split('/');
+  const arg = rest.length ? rest.join('/') : undefined;
+  document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === '#/' + page));
+  const view = $('#view');
+  if (!S) { view.innerHTML = '<p class="empty">กำลังโหลด…</p>'; await loadState(); }
+  (pages[page] || pages[''])(view, arg);
+  window.scrollTo(0, 0);
+}
+
+$('#shutdown').onclick = async () => {
+  if (!confirm('ปิดระบบ localhost?\n(เปิดใหม่ได้ด้วยคำสั่ง run mcp / mcp profile / mcp swift)')) return;
+  await api('/api/shutdown', {});
+  document.body.innerHTML = '<div class="wrap"><h1>ปิดระบบแล้ว</h1><p class="sub">ปิดหน้านี้ได้เลย</p></div>';
+};
+
+// index.html changed on disk → offer a reload (not automatic, so typed text is not lost).
+// server.js reloads itself; the page keeps working across that restart.
+let uiVersion = null;
+setInterval(async () => {
+  const r = await api('/api/ping').catch(() => null);
+  if (!r?.ui) return;
+  if (uiVersion === null) { uiVersion = r.ui; return; }
+  if (r.ui !== uiVersion && !document.getElementById('uiUpdate')) {
+    document.body.insertAdjacentHTML('afterbegin', `<div id="uiUpdate" class="msg warn" style="position:fixed;top:12px;right:12px;z-index:20;margin:0;box-shadow:0 4px 16px rgba(0,0,0,.15)">
+      หน้าเว็บมีเวอร์ชันใหม่ <button class="primary" style="margin-left:8px;padding:6px 14px" onclick="location.reload()">โหลดหน้าใหม่</button></div>`);
+  }
+}, 5000);
+
+window.addEventListener('hashchange', route);
+route().catch(() => { $('#view').innerHTML = '<div class="msg err">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — เปิดใหม่ด้วยคำสั่ง run mcp</div>'; });
+</script>
+</body>
+</html>
